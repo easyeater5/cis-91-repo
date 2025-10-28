@@ -1,0 +1,9 @@
+plugin: gcp_compute
+projects:
+  - cis-91-nkinney
+auth_kind: machineaccount
+keyed_groups:
+  - prefix: gcp
+    key: labels
+  - prefix: tags
+    key: tags
