@@ -11,5 +11,10 @@
           - php
           - mediawiki
           - mariadb-server
-    
+          - python3-pymysql
 # grant all on mediawiki.* to 'mediawiki'@'%' identified by 'mediawiki';
+    - name: Grant all PRIVILEGES to mediawiki user
+      community.mysql.mysql_query:
+        login_user: root
+        query: "GRANT ALL PRIVILEGES ON mediawiki.* TO 'mediawiki'@'localhost' IDENTIFIED BY 'mediawiki';"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
