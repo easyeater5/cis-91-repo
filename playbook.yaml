@@ -9,3 +9,7 @@
         name:
           - apache2
           - php
+          - mediawiki
+          - mariadb-server
+    
+# grant all on mediawiki.* to 'mediawiki'@'%' identified by 'mediawiki';
