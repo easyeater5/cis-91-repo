@@ -66,7 +66,7 @@ resource "google_compute_instance" "db_instance" {
   }
 
   attached_disk {
-    source      = google_compute_disk.data_disk.self_link
+    source = google_compute_disk.data_disk.id
     device_name = "data-disk"
   }
 }

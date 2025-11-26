@@ -11,12 +11,12 @@
     - name: Format the persistent disk
       community.general.filesystem:
         fstype: ext4
-        dev: /dev/sdb
+        dev: /dev/disk/by-id/google-data-disk
 
     - name: Mount the persistent disk
       ansible.posix.mount:
         path: /var/lib/mysql
-        src: /dev/sdb
+        src: /dev/disk/by-id/google-data-disk
         fstype: ext4
         state: mounted
         opts: defaults
@@ -26,11 +26,14 @@
         update_cache: yes
         cache_valid_time: 3600
         name:
-          - apache2
-          - php
-          - mediawiki
           - mariadb-server
           - python3-pymysql
+
+    - name: Grant all PRIVILEGES to mediawiki user
+      community.mysql.mysql_query:
+        login_user: root
+        query: "GRANT ALL PRIVILEGES ON mediawiki.* TO 'mediawiki'@'%' IDENTIFIED BY 'mediawiki';"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
 
     - name: Configure MariaDB to listen on all addresses
       ansible.builtin.lineinfile:
@@ -38,12 +41,6 @@
         regexp: '^bind-address'
         line: 'bind-address = 0.0.0.0'
       notify: Restart mariadb
-
-    - name: Grant all PRIVILEGES to mediawiki user
-      community.mysql.mysql_query:
-        login_user: root
-        query: "GRANT ALL PRIVILEGES ON mediawiki.* TO 'mediawiki'@'%' IDENTIFIED BY 'mediawiki';"
-        login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - hosts: tags_items___web__
   name: Install Apache and PHP
@@ -59,7 +56,17 @@
           - mediawiki
           - python3-pymysql
 
-    - name: Copy the google logging Config
+    - name: Download Ops Agent repository script
+      ansible.builtin.get_url:
+        url: https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+        dest: /tmp/add-google-cloud-ops-agent-repo.sh
+        mode: '0755'
+
+    - name: Install Ops Agent
+      ansible.builtin.command:
+        cmd: bash /tmp/add-google-cloud-ops-agent-repo.sh --also-install
+
+    - name: Copy the google logging config
       ansible.builtin.copy:
         src: config.yaml
         dest: /etc/google-cloud-ops-agent/config.yaml
