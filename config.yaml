@@ -1,0 +1,21 @@
+metrics:
+  receivers:
+    apache:
+      type: apache
+  service:
+    pipelines:
+      apache:
+        receivers:
+          - apache
+logging:
+  receivers:
+    apache_access:
+      type: apache_access
+    apache_error:
+      type: apache_error
+  service:
+    pipelines:
+      apache:
+        receivers:
+          - apache_access
+          - apache_error

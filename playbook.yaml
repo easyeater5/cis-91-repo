@@ -58,3 +58,18 @@
           - php
           - mediawiki
           - python3-pymysql
+
+    - name: Copy the google logging Config
+      ansible.builtin.copy:
+        src: config.yaml
+        dest: /etc/google-cloud-ops-agent/config.yaml
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart logging
+
+  handlers:
+    - name: Restart logging
+      ansible.builtin.service:
+        name: google-cloud-ops-agent
+        state: restarted

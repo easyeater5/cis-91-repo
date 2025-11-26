@@ -18,6 +18,18 @@ resource "google_service_account" "vm_service_account" {
   display_name = "Service Account for VM Instance"
 }
 
+resource "google_project_iam_member" "monitoring_writer" {
+  project = var.project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
+resource "google_project_iam_member" "logging_writer" {
+  project = var.project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
 resource "google_compute_network" "vpc_network" {
   name = "terraform-network"
 }
@@ -77,6 +89,11 @@ resource "google_compute_instance" "web_instance" {
     network = google_compute_network.vpc_network.name
     access_config {
     }
+  }
+
+  service_account {
+    email  = google_service_account.vm_service_account.email
+    scopes = ["cloud-platform"]
   }
 
 }
