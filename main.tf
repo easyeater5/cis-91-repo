@@ -111,6 +111,58 @@ output "external_ip" {
   value = [for instance in google_compute_instance.web_instance : instance.network_interface[0].access_config[0].nat_ip]
 }
 
+output "lb_ip_address" {
+  description = "The IP address of the load balancer."
+  value       = google_compute_global_forwarding_rule.http_lb.ip_address
+}
+
+resource "google_compute_health_check" "http_health_check" {
+  name                = "http-basic-check"
+  check_interval_sec  = 5
+  timeout_sec         = 5
+  healthy_threshold   = 2
+  unhealthy_threshold = 2
+
+  http_health_check {
+    port = 80
+  }
+}
+
+resource "google_compute_instance_group" "web_instance_group" {
+  name      = "web-instance-group"
+  zone      = var.zone
+  instances = google_compute_instance.web_instance.*.self_link
+}
+
+resource "google_compute_backend_service" "web_backend_service" {
+  name        = "web-backend-service"
+  protocol    = "HTTP"
+  port_name   = "http"
+  timeout_sec = 30
+
+  backend {
+    group = google_compute_instance_group.web_instance_group.id
+  }
+
+  health_checks = [google_compute_health_check.http_health_check.id]
+}
+
+resource "google_compute_url_map" "http_lb" {
+  name            = "http-lb-url-map"
+  default_service = google_compute_backend_service.web_backend_service.id
+}
+
+resource "google_compute_target_http_proxy" "http_lb" {
+  name    = "http-lb-proxy"
+  url_map = google_compute_url_map.http_lb.id
+}
+
+resource "google_compute_global_forwarding_rule" "http_lb" {
+  name       = "http-lb-forwarding-rule"
+  target     = google_compute_target_http_proxy.http_lb.id
+  port_range = "80"
+}
+
 resource "google_compute_firewall" "allow-http-ssh-https" {
   name    = "allow-http-ssh-https"
   network = google_compute_network.vpc_network.name
