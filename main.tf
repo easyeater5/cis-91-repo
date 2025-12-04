@@ -74,7 +74,8 @@ resource "google_compute_instance" "db_instance" {
 
 
 resource "google_compute_instance" "web_instance" {
-  name         = "web-instance"
+  count        = var.scale
+  name         = "web-instance-${count.index}"
   machine_type = "e2-small"
   tags         = ["web"]
   allow_stopping_for_update = true
@@ -99,15 +100,15 @@ resource "google_compute_instance" "web_instance" {
 }
 
 output "db-ip" {
-  value = google_compute_instance.db_instance.network_interface.0.network_ip
+  value = google_compute_instance.db_instance.network_interface[0].network_ip
 }
 
 output "web-ip" {
-  value = google_compute_instance.web_instance.network_interface.0.network_ip
+  value = [for instance in google_compute_instance.web_instance : instance.network_interface[0].network_ip]
 }
 
 output "external_ip" {
-  value = google_compute_instance.web_instance.network_interface.0.access_config.0.nat_ip
+  value = [for instance in google_compute_instance.web_instance : instance.network_interface[0].access_config[0].nat_ip]
 }
 
 resource "google_compute_firewall" "allow-http-ssh-https" {
